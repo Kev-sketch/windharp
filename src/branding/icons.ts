@@ -210,28 +210,49 @@ export const installIconRebrand = (): void => {
 
   fullReconcile();
 
+  // Guard against our own writes re-entering the observer. Without this the
+  // observer sees the content attribute we just changed, reconciles again, and
+  // live-locks the page (observed as a blank title and an unresponsive route).
+  let writing = false;
   let scheduled = false;
+
   const schedule = (): void => {
-    if (scheduled) return;
+    if (writing || scheduled) return;
     scheduled = true;
-    // Coalesce mutation bursts into one pass on the next frame.
-    requestAnimationFrame(() => {
+    // Coalesce mutation bursts into one pass.
+    setTimeout(() => {
       scheduled = false;
-      fullReconcile();
-    });
+      if (writing) return;
+      writing = true;
+      try {
+        fullReconcile();
+      } finally {
+        writing = false;
+      }
+    }, 0);
   };
 
-  // Route changes rebuild whole subtrees, so the observer drives the FULL pass
-  // (visible text included) rather than only the cheap subset.
   const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
+    // The page rewrites og:title / og:site_name with setAttribute('content'),
+    // which is an ATTRIBUTE mutation — invisible to childList/subtree. Missing
+    // this filter is why deeper routes kept their YouTube Music metadata.
+    attributes: true,
+    attributeFilter: ['content'],
   });
 
-  // The observer cannot see in-place writes to already-mounted text nodes, and
-  // requestAnimationFrame stalls while the window is occluded — so keep timers
-  // too. Both paths are idempotent and cheap.
+  // Timers back up the observer for in-place writes it cannot classify, and for
+  // the case where the window is occluded (timers throttle, but still run).
   setInterval(cheapReconcile, 800);
-  setInterval(() => step(reconcileVisibleText, 'visible-text'), 1200);
+  setInterval(() => {
+    if (writing) return;
+    writing = true;
+    try {
+      step(reconcileVisibleText, 'visible-text');
+    } finally {
+      writing = false;
+    }
+  }, 1200);
 };
