@@ -127,13 +127,32 @@ const reconcileMetadata = (): void => {
 };
 
 /**
- * Some YTM surfaces (e.g. search-result section labels) render the words
- * "YouTube Music" as ordinary visible text. Rewrite those text nodes.
+ * Rewrite the site's OWN chrome text that still says "YouTube Music".
  *
- * Deliberately conservative: text nodes only (never innerHTML), never inside
- * form controls / editable regions, and it walks with a TreeWalker so it does
- * not thrash the observer on every keystroke.
+ * IMPORTANT SCOPE: this must never touch content — playlist/video/album titles
+ * and author names legitimately contain the words "YouTube Music" (e.g. a
+ * YouTube-curated playlist row reads "Lofi Flow State | Playlist | YouTube
+ * Music | 68 songs", where the SPAN is the AUTHOR). Rewriting that would
+ * misattribute YouTube's own playlists to this app and corrupt any video or
+ * playlist whose real title mentions YouTube Music — a worse outcome both
+ * factually and legally than leaving the words alone.
+ *
+ * So: text nodes only (never innerHTML), and only when the node is NOT inside a
+ * content surface. Anything the page re-uses for media metadata is skipped.
  */
+const CONTENT_SURFACE_SELECTOR = [
+  '[is-live]',
+  'ytmusic-responsive-list-item-renderer',
+  'ytmusic-two-row-item-renderer',
+  'ytmusic-player-queue-item',
+  'ytmusic-shelf-renderer #contents > *',
+  'ytmusic-carousel-shelf-renderer',
+  'ytmusic-description-shelf-renderer',
+  'a[href*="watch"]',
+  'a[href*="playlist"]',
+  'a[href*="browse/"]',
+].join(',');
+
 const reconcileVisibleText = (): void => {
   const root = document.body;
   if (root == null) return;
@@ -156,6 +175,11 @@ const reconcileVisibleText = (): void => {
       }
 
       if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
+
+      // Never rewrite media metadata / titles / authors.
+      if (parent.closest(CONTENT_SURFACE_SELECTOR) != null) {
+        return NodeFilter.FILTER_REJECT;
+      }
 
       const value = node.nodeValue;
       if (value == null || !/youtube\s*music/i.test(value)) {
