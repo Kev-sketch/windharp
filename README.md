@@ -23,16 +23,15 @@
 
 ## About
 
-Windharp is a Tauri 2 / Rust rebuild of the Electron-based
-[pear-desktop](https://github.com/pear-devs/pear-desktop) / [youtube-music](https://github.com/th-ch/youtube-music)
-app: it loads the YouTube Music web player in a native window with a small
-Rust backend providing the window, tray, menu, config store and IPC bridge —
-without shipping Chromium + Node.js, so the app is a fraction of the size and
-uses far less memory.
+Windharp loads the YouTube Music web player in a native window backed by a
+small Rust core that provides the window, tray, menu, config store and IPC
+bridge — without shipping Chromium + Node.js, so the app is a fraction of the
+size and uses far less memory.
 
-The renderer-side plugin ecosystem, styles, and i18n of the original app are
-preserved; they run through a compatibility bridge (`assets/pear-shim.js`)
-against the Rust IPC layer.
+The renderer is SolidJS, bundled by Vite, and runs inside the system webview
+(macOS WKWebView on Apple silicon and Intel). A compatibility shim maps the
+renderer's IPC calls onto Tauri commands, which is what lets the existing
+plugin ecosystem, styles and translations work unchanged.
 
 ## Build from source
 
@@ -59,22 +58,34 @@ The built app lands in `src-tauri/target/release/bundle/`.
 | Layer | Tech | Notes |
 |---|---|---|
 | Window/tray/menu/config/IPC | Rust (`src-tauri/`) | Tauri 2.12, tray icon, native menu, JSON config store |
-| Renderer | SolidJS + mdui (`src/`) | Ported from the Electron renderer; bundled by Vite |
-| Bridge | `assets/pear-shim.js` | Maps legacy Electron APIs onto Tauri IPC |
-| Legacy Electron code | `electron-legacy/` | Archived, not built; kept for reference & plugin backends ported on demand |
+| Renderer | SolidJS + mdui (`src/`) | Bundled by Vite |
+| Bridge | Compatibility shim | Maps renderer IPC calls onto Tauri commands |
+| Legacy reference code | `electron-legacy/` | Archived, not built; kept for reference |
+
+## Signing in
+
+Sign-in works inside the app: Windharp presents the User-Agent of the webview
+engine it actually runs (WebKit on macOS), which is what Google's embedded
+browser check requires.
 
 ## Themes
 
-You can load CSS files to change the look of the application (Options > Visual Tweaks > Themes).
-Some predefined themes are available at
+You can load CSS files to change the look of the application (Options > Visual
+Tweaks > Themes). Some predefined themes are available at
 https://github.com/kerichdev/themes-for-ytmdesktop-player.
+
+## Ad blocking
+
+In-player ad blocking is available via Plugins > do-not-track ("In player"
+mode). Network-level blocklist filtering is not available in this build,
+because the system webview does not expose request interception.
 
 ## Attribution
 
-Windharp is a fork of two MIT-licensed community projects, both preserved in
-this codebase's history:
+Windharp is a fork of two MIT-licensed community projects, preserved in this
+codebase's history:
 
-- **[pear-desktop](https://github.com/pear-devs/pear-desktop)** (pear-devs) — the Electron app this repo was forked from
+- **[pear-desktop](https://github.com/pear-devs/pear-desktop)** (pear-devs) — the Electron app this repository was forked from
 - **[youtube-music](https://github.com/th-ch/youtube-music)** (th-ch) — the original YouTube Music desktop app
 
 All credit for the original design, plugin ecosystem, and renderer goes to
@@ -82,5 +93,5 @@ their contributors.
 
 ## License
 
-MIT — see [LICENSE](./license). © original authors th-ch / pear-devs; Windharp
-modifications © Kev-sketch.
+MIT — see [license](./license). © original authors th-ch / pear-devs;
+Windharp modifications © Kev-sketch.

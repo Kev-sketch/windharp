@@ -1,4 +1,4 @@
-# Pear Tauri port — reviewer findings
+# Windharp Tauri port — reviewer findings
 
 Date: 2026-11-10
 Scope: src-tauri/src/{lib,menu,ipc,tray,song_info,config}.rs, assets/pear-shim.js, dist/renderer contracts (dist/index.js, dist/plugins-manifest.json), vendored tauri-2.12.5.
