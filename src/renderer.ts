@@ -4,6 +4,7 @@ import 'mdui/mdui.css';
 import 'mdui';
 
 import { loadI18n, setLanguage, t as i18t } from '@/i18n';
+import { setupBranding } from '@/branding/branding';
 import {
   defaultTrustedTypePolicy,
   registerWindowDefaultTrustedTypePolicy,
@@ -35,6 +36,10 @@ let isApiLoaded = false;
 let firstDataLoaded = false;
 
 registerWindowDefaultTrustedTypePolicy();
+
+// Replace YouTube Music's in-page logo + document title with Windharp
+// branding as early as possible (before the page's own UI finishes building).
+setupBranding();
 
 async function listenForApiLoad() {
   if (!isApiLoaded) {
