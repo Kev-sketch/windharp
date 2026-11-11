@@ -1,38 +1,10 @@
 import { installIconRebrand } from '@/branding/icons';
+import { APP_NAME, rebrandText } from '@/branding/rebrand';
 import { getLogoSvg } from '@/branding/logo';
 
 // Replace the in-page "YouTube Music" branding (logo + title) with Windharp
 // branding. Pure client-side UI change inside our own webview; the
 // music.youtube.com content itself is untouched.
-
-export const APP_NAME = 'Windharp';
-
-/**
- * Case-insensitive, loop-safe replacement of every "YouTube Music" occurrence.
- *
- * Deliberately does NOT use a /g regex with .test(): that keeps `lastIndex`
- * state between calls, so alternating calls silently skip the replacement.
- */
-const rebrandText = (value: string | null | undefined): string => {
-  const source = value == null ? '' : String(value);
-  const lower = source.toLowerCase();
-  const needle = 'youtube music';
-
-  let out = '';
-  let from = 0;
-
-  for (;;) {
-    const at = lower.indexOf(needle, from);
-    if (at < 0) {
-      out += source.slice(from);
-      break;
-    }
-    out += source.slice(from, at) + APP_NAME;
-    from = at + needle.length;
-  }
-
-  return out;
-};
 
 /**
  * YouTube Music DOES NOT set `document.title` — it creates a fresh <title>

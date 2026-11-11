@@ -6,7 +6,7 @@
 // everything here is applied through a reconciler (observer + backstop timer),
 // mirroring the title logic in branding.ts.
 
-import { APP_NAME } from '@/branding/branding';
+import { APP_NAME, rebrandText } from '@/branding/rebrand';
 
 /**
  * Square Windharp app glyph as a standalone SVG data URI — used for the
@@ -101,7 +101,11 @@ const reconcileManifest = (): void => {
   manifestLink.setAttribute('data-wh-manifest', '1');
 };
 
-/** og:site_name / og:title / itemprop=name still read "YouTube Music". */
+/**
+ * og:site_name / og:title / itemprop=name still name the site "YouTube Music".
+ * Deeper routes use longer strings ("Explore new music… | YouTube Music"), so
+ * this rewrites every occurrence rather than only an exact match.
+ */
 const reconcileMetadata = (): void => {
   const selectors = [
     'meta[property="og:site_name"]',
@@ -114,10 +118,65 @@ const reconcileMetadata = (): void => {
   for (const selector of selectors) {
     document.querySelectorAll(selector).forEach((meta) => {
       const content = meta.getAttribute('content') ?? '';
-      if (/youtube\s*music/i.test(content)) {
-        meta.setAttribute('content', APP_NAME);
+      const rewritten = rebrandText(content);
+      if (rewritten !== content) {
+        meta.setAttribute('content', rewritten);
       }
     });
+  }
+};
+
+/**
+ * Some YTM surfaces (e.g. search-result section labels) render the words
+ * "YouTube Music" as ordinary visible text. Rewrite those text nodes.
+ *
+ * Deliberately conservative: text nodes only (never innerHTML), never inside
+ * form controls / editable regions, and it walks with a TreeWalker so it does
+ * not thrash the observer on every keystroke.
+ */
+const reconcileVisibleText = (): void => {
+  const root = document.body;
+  if (root == null) return;
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (parent == null) return NodeFilter.FILTER_REJECT;
+
+      const tag = parent.tagName;
+      if (
+        tag === 'SCRIPT' ||
+        tag === 'STYLE' ||
+        tag === 'NOSCRIPT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'INPUT' ||
+        tag === 'TITLE'
+      ) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      if (parent.isContentEditable) return NodeFilter.FILTER_REJECT;
+
+      const value = node.nodeValue;
+      if (value == null || !/youtube\s*music/i.test(value)) {
+        return NodeFilter.FILTER_REJECT;
+      }
+
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  const pending: Text[] = [];
+  for (let node = walker.nextNode(); node != null; node = walker.nextNode()) {
+    pending.push(node as Text);
+  }
+
+  for (const node of pending) {
+    const current = node.nodeValue ?? '';
+    const rewritten = rebrandText(current);
+    if (rewritten !== current) {
+      node.nodeValue = rewritten;
+    }
   }
 };
 
@@ -128,11 +187,18 @@ export const installIconRebrand = (): void => {
     reconcileIcons(dataUri);
     reconcileManifest();
     reconcileMetadata();
+    reconcileVisibleText();
   };
 
   reconcile();
 
-  const observer = new MutationObserver(() => reconcile());
+  // Text rewrites in this reconciler would otherwise re-trigger the observer
+  // continuously; the backstop interval absorbs that safely.
+  const observer = new MutationObserver(() => {
+    reconcileIcons(dataUri);
+    reconcileManifest();
+    reconcileMetadata();
+  });
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
