@@ -26,6 +26,10 @@ use config::PearStore;
 pub const RENDERER_BUNDLE: &str = include_str!("../../dist/index.js");
 pub const PLUGIN_STUBS: &str = include_str!("../../dist/plugins-manifest.json");
 pub const SHIM_JS: &str = include_str!("../../assets/pear-shim.js");
+// In-page ad blocker (replaces the Electron-era do-not-track preload, which
+// cannot run in a Tauri/WKWebView build). Must load before the page's own
+// scripts so the player-response traps are installed first.
+pub const ADBLOCK_JS: &str = include_str!("../../assets/pear-adblock.js");
 
 // Dev-mode renderer: when true the bundle is fetched from the vite dev
 // server instead of the baked-in dist bundle (hot reload inside the real
@@ -166,9 +170,12 @@ fn setup_window(app: &tauri::AppHandle, store: &PearStore, plugin_names: &[Strin
         .visible(true);
 
     // Order matters: the shim reads __PEAR_BOOTSTRAP__ synchronously at
-    // install time, so the bootstrap object must exist before the shim.
+    // install time, so the bootstrap object must exist before the shim. The
+    // ad blocker reads its config from that same bootstrap object, and must be
+    // installed before the page's own scripts create the player.
     builder = builder
         .initialization_script(&build_bootstrap_script(store, plugin_names))
+        .initialization_script(ADBLOCK_JS)
         .initialization_script(SHIM_JS)
         .initialization_script(&build_stubs_seed_script())
         .initialization_script(&build_renderer_script());

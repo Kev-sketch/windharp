@@ -1,3 +1,22 @@
+/**
+ * do-not-track — ad / tracker blocking.
+ *
+ * IMPORTANT (Tauri build): the Electron implementation in this folder
+ * (blocker.ts + the injectors) cannot run here. It depends on
+ * @ghostery/adblocker-electron, contextBridge, webFrame and BrowserWindow —
+ * none of which exist in a Tauri/WKWebView app. This plugin therefore has no
+ * `renderer` block, so the renderer loader never starts it; it is kept only as
+ * the archived upstream implementation.
+ *
+ * The WORKING ad blocker for this build is `assets/pear-adblock.js`, injected
+ * at document-start from src-tauri/src/lib.rs. It reads this plugin's
+ * `enabled` / `blocker` config out of window.__PEAR_BOOTSTRAP__ directly, so
+ * toggling the plugin in the Plugins menu does affect it.
+ *
+ * Mode note: only "In player" is supported. "With blocklists" needs
+ * session-level request interception, which the webview does not expose; the
+ * injected script reports that honestly instead of pretending to filter.
+ */
 import { contextBridge, webFrame, type BrowserWindow } from 'electron';
 
 import { t } from '@/i18n';
