@@ -43,15 +43,39 @@ Requirements: Node 22+, pnpm 9+, Rust toolchain, and the
 git clone https://github.com/Kev-sketch/windharp
 cd windharp
 pnpm install --frozen-lockfile
-
-# Development (vite + rust, hot reload)
-pnpm tauri:dev
-
-# Production build (app + dmg)
-pnpm tauri:build
 ```
 
-The built app lands in `src-tauri/target/release/bundle/`.
+### macOS
+
+Apple Silicon is cross-compilable from an Intel Mac and vice versa:
+
+```bash
+pnpm tauri:build:mac:arm64   # Apple Silicon (M-series)
+pnpm tauri:build:mac:x64     # Intel
+pnpm tauri:build:mac         # universal binary (both)
+```
+
+Artifacts land in `src-tauri/target/<target>/release/bundle/dmg/`.
+
+### Windows
+
+Windows **must** be built on Windows (or a Windows CI runner). Tauri needs the
+MSVC toolchain and the WebView2 SDK, which cannot be cross-compiled from macOS
+or Linux.
+
+```powershell
+pnpm tauri:build:win         # NSIS installer + MSI
+```
+
+Artifacts land in
+`src-tauri/target/x86_64-pc-windows-msvc/release/bundle/{nsis,msi}/`.
+
+### Prebuilt binaries
+
+[`.github/workflows/windharp-build.yml`](.github/workflows/windharp-build.yml)
+builds all three targets (macOS arm64, macOS x64, Windows x64) on every push
+and tag, and uploads them as workflow artifacts.
+
 
 ## What runs where
 
