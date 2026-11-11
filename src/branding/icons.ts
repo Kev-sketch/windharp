@@ -183,26 +183,55 @@ const reconcileVisibleText = (): void => {
 export const installIconRebrand = (): void => {
   const dataUri = `data:image/svg+xml,${encodeURIComponent(buildGlyphSvg())}`;
 
-  const reconcile = (): void => {
-    reconcileIcons(dataUri);
-    reconcileManifest();
-    reconcileMetadata();
-    reconcileVisibleText();
+  // Every step is isolated: a throw in one (e.g. a moment where head is null)
+  // must never skip the others. Previously an exception in any step silently
+  // aborted the remainder, which is why some SPA routes came out rebranded and
+  // others did not.
+  const step = (fn: () => void, name: string): void => {
+    try {
+      fn();
+    } catch (error) {
+      console.error(`[pear] branding step failed: ${name}`, error);
+    }
   };
 
-  reconcile();
+  const fullReconcile = (): void => {
+    step(() => reconcileIcons(dataUri), 'icons');
+    step(reconcileManifest, 'manifest');
+    step(reconcileMetadata, 'metadata');
+    step(reconcileVisibleText, 'visible-text');
+  };
 
-  // Text rewrites in this reconciler would otherwise re-trigger the observer
-  // continuously; the backstop interval absorbs that safely.
-  const observer = new MutationObserver(() => {
-    reconcileIcons(dataUri);
-    reconcileManifest();
-    reconcileMetadata();
-  });
+  const cheapReconcile = (): void => {
+    step(() => reconcileIcons(dataUri), 'icons');
+    step(reconcileManifest, 'manifest');
+    step(reconcileMetadata, 'metadata');
+  };
+
+  fullReconcile();
+
+  let scheduled = false;
+  const schedule = (): void => {
+    if (scheduled) return;
+    scheduled = true;
+    // Coalesce mutation bursts into one pass on the next frame.
+    requestAnimationFrame(() => {
+      scheduled = false;
+      fullReconcile();
+    });
+  };
+
+  // Route changes rebuild whole subtrees, so the observer drives the FULL pass
+  // (visible text included) rather than only the cheap subset.
+  const observer = new MutationObserver(schedule);
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
   });
 
-  setInterval(reconcile, 1000);
+  // The observer cannot see in-place writes to already-mounted text nodes, and
+  // requestAnimationFrame stalls while the window is occluded — so keep timers
+  // too. Both paths are idempotent and cheap.
+  setInterval(cheapReconcile, 800);
+  setInterval(() => step(reconcileVisibleText, 'visible-text'), 1200);
 };
