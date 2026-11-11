@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-subscribe"
+description = "Enables the peard_subscribe command without any pre-configured scope."
+commands.allow = ["peard_subscribe"]
+
+[[permission]]
+identifier = "deny-peard-subscribe"
+description = "Denies the peard_subscribe command without any pre-configured scope."
+commands.deny = ["peard_subscribe"]

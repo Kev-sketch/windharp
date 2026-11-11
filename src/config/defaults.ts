@@ -69,7 +69,10 @@ export const defaultConfig: DefaultConfig = {
     swapLikeButtonsOrder: false,
     proxy: '',
     startingPage: '',
-    overrideUserAgent: false,
+    // Default ON so Google sign-in works in the embedded webview out of the box
+    // (Google flags Electron/Tauri webview UAs; presenting the real Chrome UA
+    // fixes "This browser or app may not be secure"). Legacy default was false.
+    overrideUserAgent: true,
     usePodcastParticipantAsArtist: false,
     themes: [],
   },

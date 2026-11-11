@@ -119,11 +119,16 @@ export const loadAllRendererPlugins = async () => {
     const config = deepmerge(pluginDef.config, pluginConfigs[pluginId] ?? {});
 
     if (config.enabled) {
-      await forceLoadRendererPlugin(pluginId);
-    } else {
-      if (loadedPluginMap[pluginId]) {
-        await forceUnloadRendererPlugin(pluginId);
+      // One plugin failing must never abort the whole renderer boot chain
+      // (especially the plugin:enable / config-changed listeners that are
+      // only registered after this loop completes in main()).
+      try {
+        await forceLoadRendererPlugin(pluginId);
+      } catch (error) {
+        console.error(`[pear] renderer plugin ${pluginId} failed to load`, error);
       }
+    } else if (loadedPluginMap[pluginId]) {
+      await forceUnloadRendererPlugin(pluginId);
     }
   }
 };

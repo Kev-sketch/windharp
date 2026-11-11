@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-restart"
+description = "Enables the peard_restart command without any pre-configured scope."
+commands.allow = ["peard_restart"]
+
+[[permission]]
+identifier = "deny-peard-restart"
+description = "Denies the peard_restart command without any pre-configured scope."
+commands.deny = ["peard_restart"]

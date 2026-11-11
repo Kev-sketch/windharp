@@ -1,10 +1,9 @@
 {
-  "extends": "./node_modules/@electron-toolkit/tsconfig/tsconfig.node.json",
   "compilerOptions": {
     "target": "esnext",
     "lib": ["dom", "dom.iterable", "es2022"],
     "module": "esnext",
-    "types": ["electron-vite/node"],
+    "types": ["vite/client"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -21,11 +20,10 @@
       "@assets/*": ["./assets/*"]
     }
   },
-  "exclude": ["./dist"],
+  "exclude": ["./dist", "./electron-legacy", "./src-tauri"],
   "include": [
-    "electron.vite.config.mts",
-    "playwright.config.ts",
+    "vite.config.ts",
     "./src/**/*",
-    "*.config.*js"
+    "./vite-plugins/**/*"
   ]
 }

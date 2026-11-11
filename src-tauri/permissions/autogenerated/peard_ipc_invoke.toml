@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-ipc-invoke"
+description = "Enables the peard_ipc_invoke command without any pre-configured scope."
+commands.allow = ["peard_ipc_invoke"]
+
+[[permission]]
+identifier = "deny-peard-ipc-invoke"
+description = "Denies the peard_ipc_invoke command without any pre-configured scope."
+commands.deny = ["peard_ipc_invoke"]

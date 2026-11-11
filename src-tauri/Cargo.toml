@@ -1,0 +1,28 @@
+[package]
+name = "windharp"
+version = "4.1.0"
+description = "Windharp — a lightweight, fast unofficial YouTube Music client (Tauri/Rust)"
+authors = ["Kev-sketch"]
+license = "MIT"
+repository = "https://github.com/Kev-sketch/windharp"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "windharp_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.12.5", features = ["tray-icon", "image-png"] }
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-log = "2"
+tauri-plugin-window-state = "2"
+tauri-plugin-global-shortcut = "2"

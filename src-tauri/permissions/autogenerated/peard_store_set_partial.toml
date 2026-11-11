@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-store-set-partial"
+description = "Enables the peard_store_set_partial command without any pre-configured scope."
+commands.allow = ["peard_store_set_partial"]
+
+[[permission]]
+identifier = "deny-peard-store-set-partial"
+description = "Denies the peard_store_set_partial command without any pre-configured scope."
+commands.deny = ["peard_store_set_partial"]

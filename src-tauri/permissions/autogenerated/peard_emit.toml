@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-emit"
+description = "Enables the peard_emit command without any pre-configured scope."
+commands.allow = ["peard_emit"]
+
+[[permission]]
+identifier = "deny-peard-emit"
+description = "Denies the peard_emit command without any pre-configured scope."
+commands.deny = ["peard_emit"]

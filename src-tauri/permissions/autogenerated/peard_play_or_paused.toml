@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-play-or-paused"
+description = "Enables the peard_play_or_paused command without any pre-configured scope."
+commands.allow = ["peard_play_or_paused"]
+
+[[permission]]
+identifier = "deny-peard-play-or-paused"
+description = "Denies the peard_play_or_paused command without any pre-configured scope."
+commands.deny = ["peard_play_or_paused"]

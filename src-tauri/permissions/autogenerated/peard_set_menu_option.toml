@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-peard-set-menu-option"
+description = "Enables the peard_set_menu_option command without any pre-configured scope."
+commands.allow = ["peard_set_menu_option"]
+
+[[permission]]
+identifier = "deny-peard-set-menu-option"
+description = "Denies the peard_set_menu_option command without any pre-configured scope."
+commands.deny = ["peard_set_menu_option"]

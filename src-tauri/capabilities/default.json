@@ -1,0 +1,50 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Windharp capability: main window with IPC bridge (loads music.youtube.com)",
+  "local": true,
+  "remote": {
+    "urls": [
+      "https://*.youtube.com",
+      "https://*.google.com",
+      "https://*.doubleclick.net",
+      "https://*.gstatic.com",
+      "https://*.ytimg.com",
+      "https://*.googlevideo.com"
+    ]
+  },
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:webview:default",
+    "core:event:default",
+    "core:window:default",
+    "core:window:allow-minimize",
+    "core:window:allow-unminimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-close",
+    "core:window:allow-show",
+    "core:window:allow-hide",
+    "core:window:allow-set-focus",
+    "log:default",
+    "window-state:default",
+    "global-shortcut:allow-register",
+    "global-shortcut:allow-unregister",
+    "global-shortcut:allow-is-registered",
+    "global-shortcut:allow-unregister-all",
+    "allow-peard-store-set",
+    "allow-peard-store-set-partial",
+    "allow-peard-set-menu-option",
+    "allow-peard-emit",
+    "allow-peard-subscribe",
+    "allow-peard-ipc-invoke",
+    "allow-get-menu",
+    "allow-get-menu-by-id",
+    "allow-peard-menu-event",
+    "allow-peard-video-src-changed",
+    "allow-peard-play-or-paused",
+    "allow-peard-time-changed",
+    "allow-peard-restart"
+  ]
+}

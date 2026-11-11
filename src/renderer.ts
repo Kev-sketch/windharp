@@ -536,4 +536,7 @@ const initObserver = async () => {
   });
 };
 
-initObserver().then(preload).then(main);
+initObserver()
+  .then(preload)
+  .then(main)
+  .catch((err) => console.error('[pear] renderer boot failed', err));

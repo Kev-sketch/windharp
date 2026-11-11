@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-menu"
+description = "Enables the get_menu command without any pre-configured scope."
+commands.allow = ["get_menu"]
+
+[[permission]]
+identifier = "deny-get-menu"
+description = "Denies the get_menu command without any pre-configured scope."
+commands.deny = ["get_menu"]
