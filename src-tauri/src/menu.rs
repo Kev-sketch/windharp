@@ -261,10 +261,11 @@ pub fn build_menu_model(store: &PearStore, manifest: &str) -> MenuTree {
     let theme_current = store.get_str("options.theme").unwrap_or_default();
 
     // "Starting page" radios — documented limitation: fixed pair. Values not in the
-    // set are displayed as "Default" checked.
+    // set are displayed as "Default" checked. The second entry is labelled with the
+    // product name so no YouTube branding reaches the native menu.
     let starting_page_current = if starting_page == "music.youtube.com" { "music.youtube.com" } else { "" };
     let mut starting_page_items = Vec::new();
-    for (value, label) in [("", "Default"), ("music.youtube.com", "music.youtube.com")] {
+    for (value, label) in [("", "Default"), ("music.youtube.com", "Windharp")] {
         let checked = value == starting_page_current;
         starting_page_items.push(MenuItemModel::radio(label, value, "options.startingPage", checked));
     }

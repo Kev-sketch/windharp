@@ -1,49 +1,107 @@
+import { installIconRebrand } from '@/branding/icons';
 import { getLogoSvg } from '@/branding/logo';
 
-// Replace the in-page "YouTube Music" branding (nav-bar logo + document
-// title) with Windharp branding. Pure client-side UI change inside our own
-// webview; the music.youtube.com content itself is untouched.
+// Replace the in-page "YouTube Music" branding (logo + title) with Windharp
+// branding. Pure client-side UI change inside our own webview; the
+// music.youtube.com content itself is untouched.
 
-const APP_NAME = 'Windharp';
+export const APP_NAME = 'Windharp';
 
-const TITLE_RE = /YouTube\s*Music/gi;
+/**
+ * Case-insensitive, loop-safe replacement of every "YouTube Music" occurrence.
+ *
+ * Deliberately does NOT use a /g regex with .test(): that keeps `lastIndex`
+ * state between calls, so alternating calls silently skip the replacement.
+ */
+const rebrandText = (value: string | null | undefined): string => {
+  const source = value == null ? '' : String(value);
+  const lower = source.toLowerCase();
+  const needle = 'youtube music';
 
-const rebrandTitle = (raw: string | null | undefined): string =>
-  (raw == null ? '' : String(raw).replace(TITLE_RE, APP_NAME)).trim() ||
-  APP_NAME;
+  let out = '';
+  let from = 0;
 
+  for (;;) {
+    const at = lower.indexOf(needle, from);
+    if (at < 0) {
+      out += source.slice(from);
+      break;
+    }
+    out += source.slice(from, at) + APP_NAME;
+    from = at + needle.length;
+  }
+
+  return out;
+};
+
+/**
+ * YouTube Music DOES NOT set `document.title` — it creates a fresh <title>
+ * element and writes `textContent` on it. That bypasses the Document.title
+ * prototype setter entirely, so intercepting the setter is not enough (it was
+ * the original implementation and it never took effect in the app).
+ *
+ * Correct approach: reconcile both `document.title` and every <title>
+ * element's textContent, and re-run whenever the DOM mutates (title element
+ * added/changed) plus on a slow interval as a backstop.
+ */
 export const installTitleRebrand = (): void => {
-  // The page (and its router) set document.title repeatedly. Intercept the
-  // native setter so every write lands rebranded, then rewrite whatever the
-  // page already set before we installed.
-  const descriptor =
-    Object.getOwnPropertyDescriptor(Document.prototype, 'title') ??
-    Object.getOwnPropertyDescriptor(HTMLDocument.prototype, 'title');
+  const reconcile = (): void => {
+    try {
+      const current = document.title;
+      const wanted = rebrandText(current);
+      if (wanted !== current) {
+        document.title = wanted;
+      }
+    } catch {
+      // Title may be unavailable during early document construction.
+    }
 
-  if (!descriptor?.set || !descriptor.get) return;
+    const titles = document.getElementsByTagName('title');
+    for (let i = 0; i < titles.length; i += 1) {
+      const element = titles[i];
+      const text = element.textContent;
+      const wanted = rebrandText(text);
+      if (wanted !== text) {
+        element.textContent = wanted;
+      }
+    }
+  };
 
-  const { set: nativeSet, get: nativeGet } = descriptor;
+  const isTitleNode = (node: Node): boolean =>
+    node.nodeName === 'TITLE' ||
+    (node.parentNode != null && node.parentNode.nodeName === 'TITLE');
 
-  Object.defineProperty(document, 'title', {
-    configurable: true,
-    get() {
-      return nativeGet.call(document);
-    },
-    set(value) {
-      nativeSet.call(document, rebrandTitle(value));
-    },
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      const target = mutation.target;
+      if (target != null && target.nodeName === 'TITLE') return reconcile();
+
+      if (mutation.type === 'childList') {
+        for (const added of Array.from(mutation.addedNodes)) {
+          if (isTitleNode(added)) return reconcile();
+        }
+      }
+    }
   });
 
-  // Rewrite the title the page set before this script ran.
-  nativeSet.call(document, rebrandTitle(nativeGet.call(document)));
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+  });
+
+  reconcile();
+
+  // Backstop for anything the observer cannot see (e.g. same-value writes).
+  setInterval(reconcile, 500);
 };
 
 const isLogoAlreadySwapped = (logo: Element): boolean =>
   logo.querySelector('a > svg.wh-logo') !== null;
 
 const swapLogo = (logo: Element): void => {
-  // At least two instances exist: the nav-bar logo and a hidden one kept
-  // for the collapsible guide drawer. Rebrand every instance.
+  // At least two instances exist: the nav-bar logo and a hidden one kept for
+  // the collapsible guide drawer. Rebrand every instance.
   const anchor = logo.querySelector('a');
   if (!anchor) return;
 
@@ -51,22 +109,16 @@ const swapLogo = (logo: Element): void => {
   anchor.setAttribute('data-wh-logo', '1');
 };
 
-let observer: MutationObserver | null = null;
-
 export const installLogoRebrand = (): void => {
   const apply = (): void => {
-    document
-      .querySelectorAll('ytmusic-logo')
-      .forEach((logo) => void applyOne(logo));
-  };
-
-  const applyOne = (logo: Element): void => {
-    if (!isLogoAlreadySwapped(logo)) swapLogo(logo);
+    document.querySelectorAll('ytmusic-logo').forEach((logo) => {
+      if (!isLogoAlreadySwapped(logo)) swapLogo(logo);
+    });
   };
 
   apply();
 
-  observer = new MutationObserver(() => apply());
+  const observer = new MutationObserver(() => apply());
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
@@ -84,5 +136,11 @@ export const setupBranding = (): void => {
     installLogoRebrand();
   } catch (error) {
     console.error('[pear] logo rebrand failed', error);
+  }
+
+  try {
+    installIconRebrand();
+  } catch (error) {
+    console.error('[pear] icon rebrand failed', error);
   }
 };
