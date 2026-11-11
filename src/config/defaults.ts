@@ -69,9 +69,11 @@ export const defaultConfig: DefaultConfig = {
     swapLikeButtonsOrder: false,
     proxy: '',
     startingPage: '',
-    // Default ON so Google sign-in works in the embedded webview out of the box
-    // (Google flags Electron/Tauri webview UAs; presenting the real Chrome UA
-    // fixes "This browser or app may not be secure"). Legacy default was false.
+    // Default ON: present the UA of the engine actually rendering the page
+    // (WKWebView on macOS, WebView2 on Windows). Google rejects embedded
+    // webviews that claim to be a browser they aren't — a Chrome UA on
+    // WKWebView lands on /v3/signin/rejected ("This browser or app may not be
+    // secure"). Legacy default was false.
     overrideUserAgent: true,
     usePodcastParticipantAsArtist: false,
     themes: [],

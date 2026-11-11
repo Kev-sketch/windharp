@@ -34,9 +34,19 @@ const DEV: bool = cfg!(debug_assertions);
 const DEV_URL: &str = "http://localhost:5173";
 const DEFAULT_URL: &str = "https://music.youtube.com";
 
-// Legacy window chrome forced a Chrome UA on macOS so Google sign-in works
-// in the embedded webview (defaults.ts now ships overrideUserAgent: true).
+// User-Agent must describe the engine that actually renders the page, or
+// Google's anti-phishing check rejects sign-in with "This browser or app may
+// not be secure" (/v3/signin/rejected).
+//
+// The Electron app could honestly claim Chrome (it embedded Chromium). Tauri on
+// macOS embeds WKWebView instead — Safari's engine — so the inherited
+// Chrome/130 string was a lie about the engine, and Google blocks it. Verified
+// empirically on macOS 13.7.8: Chrome UA -> rejected; WebKit/Safari UA -> the
+// account lookup proceeds normally.
+//
+// Windows WebView2 is Chromium, so the Chrome UA stays truthful there.
 const CHROME_UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.6723.152 Safari/537.36";
+const SAFARI_UA: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15";
 
 // Set the moment the app begins quitting so the window CloseRequested
 // handler lets the close pass instead of hiding to tray (legacy forceQuit).
@@ -122,6 +132,20 @@ fn plugin_names_from_manifest() -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// The UA string matching the webview engine this build actually uses.
+/// macOS -> WKWebView (WebKit), Windows -> WebView2 (Chromium), Linux -> WebKitGTK.
+fn ua_for_current_platform() -> &'static str {
+    if cfg!(target_os = "macos") {
+        SAFARI_UA
+    } else if cfg!(target_os = "windows") {
+        CHROME_UA
+    } else {
+        // WebKitGTK: keep the historical Chromium-flavoured string; Linux keeps
+        // the pre-existing behaviour (no sign-in regression either way).
+        CHROME_UA
+    }
+}
+
 fn setup_window(app: &tauri::AppHandle, store: &PearStore, plugin_names: &[String]) -> tauri::Result<()> {
     let resume = store.get_bool("options.resumeOnStart").unwrap_or(false);
     let start_url = if resume {
@@ -153,10 +177,12 @@ fn setup_window(app: &tauri::AppHandle, store: &PearStore, plugin_names: &[Strin
         builder = builder.always_on_top(true);
     }
 
-    // Google sign-in requires a Chrome user agent in the embedded webview;
-    // forced on macOS per the port decision (default overrideUserAgent=true).
+    // Present the UA of the engine actually in use, so Google sign-in is not
+    // flagged as a masquerading browser (see SAFARI_UA comment above).
+    // Retains the pre-existing macOS force so configs with overrideUserAgent
+    // turned off keep a sane UA instead of the bare WKWebView one.
     if override_ua || cfg!(target_os = "macos") {
-        builder = builder.user_agent(CHROME_UA);
+        builder = builder.user_agent(ua_for_current_platform());
     }
 
     // Build FIRST, then register the window-event handler on the built window
