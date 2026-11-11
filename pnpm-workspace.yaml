@@ -1,3 +1,6 @@
+packages:
+  - .
+
 minimumReleaseAge: 360
 allowBuilds:
   bufferutil: true
