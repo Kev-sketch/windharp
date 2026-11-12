@@ -1,0 +1,13 @@
+# Keep build artifacts free of personal filesystem paths.
+#
+# Rust embeds absolute source paths as panic-location / debuginfo metadata, so a
+# local build bakes the builder's home directory (e.g. /Users/<name>/.cargo/...)
+# into the binary and therefore into anything distributed.
+#
+# RUSTFLAGS below is applied by the release script rather than hardcoded here so
+# the path prefix matches whatever machine is building. See
+# scripts/build-release.sh, which derives it from $HOME.
+[build]
+# No rustflags here on purpose: hardcoding a developer's home path would only
+# work on that one machine. Use scripts/build-release.sh, which passes
+# --remap-path-prefix="$HOME=." for every target.
